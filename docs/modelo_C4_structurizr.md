@@ -35,7 +35,7 @@ docker run -it --rm \
 
 Una vez levantado el contenedor, abre en tu navegador:
 
-http://localhost:8080
+`http://localhost:8080`
 
 Si todo salió bien, verás las vistas arquitectónicas definidas en el workspace.
 

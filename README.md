@@ -89,7 +89,7 @@ Próximos pasos previstos:
 ## Documentación
 
 - [Contexto UTN 2023](docs/contexto-utn.md)
-- [Modelo C4 / Structurizr / modelo_C4_structurizr.md](docs/structurizr/modelo_C4_structurizr.md)
+- [Modelo C4 / Structurizr / modelo_C4_structurizr.md](docs/modelo_C4_structurizr.md)
 
 ## Nota
 
