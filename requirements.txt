@@ -1,0 +1,11 @@
+iniconfig==2.3.0
+numpy==2.4.3
+packaging==26.0
+pandas==3.0.1
+pluggy==1.6.0
+py4j==0.10.9.9
+Pygments==2.19.2
+pyspark==4.1.1
+pytest==9.0.2
+python-dateutil==2.9.0.post0
+six==1.17.0

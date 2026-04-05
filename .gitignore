@@ -1,0 +1,14 @@
+.telemetria/
+.venv/
+__pycache__/
+*.pyc
+.env
+logs/*.log
+.ipynb_checkpoints/
+.vscode/
+data/silver/
+data/gold/
+docs/structurizr/.structurizr/
+docs/structurizr/workspace.json
+docs/structurizr/workspaceBackupV1.dsl
+docs/structurizr/workspaceBackupV2.dsl

@@ -1,0 +1,127 @@
+@startuml
+title Flujo extremo a extremo de sensor_events
+
+autonumber
+
+actor Usuario as U
+participant "run_pipeline.py" as RP
+participant "main.py" as M
+participant "settings.py" as S
+participant "logger.py" as LG
+participant "pipelines.py" as P
+participant "readers.py" as R
+participant "schemas.py" as SC
+database "Bronze\nsensor_events.csv" as B
+participant "validators.py" as V
+participant "quality_rules.py" as QR
+participant "writers.py" as W
+database "Silver\nsensor_events/" as SI
+
+== Arranque ==
+
+U -> RP : Ejecuta scripts/run_pipeline.py
+activate RP
+
+RP -> RP : Calcula raíz del proyecto
+RP -> RP : Agrega src a sys.path
+RP -> M : Importa main y llama main()
+deactivate RP
+
+== Orquestación global ==
+
+activate M
+M -> S : Importa SPARK_APP_NAME,\nSPARK_MASTER,\nNOMBRE_PIPELINE
+M -> LG : obtener_logger()
+LG --> M : logger
+
+M -> LG : info("Inicia la aplicación principal...")
+M -> M : crear_spark_session()
+activate M
+M -> S : Lee SPARK_APP_NAME y SPARK_MASTER
+M -> M : SparkSession.builder\n.appName(...)\n.master(...)\n.getOrCreate()
+deactivate M
+
+M -> LG : info("SparkSession creada correctamente")
+M -> P : ejecutar_todos_los_pipelines(spark)
+
+== Lote completo ==
+
+activate P
+P -> LG : info("Inicia la ejecución completa...")
+
+P -> P : ejecutar_pipeline_sensor_events(spark)
+P -> P : procesar_dataset_bronze_a_silver(spark, "sensor_events")
+P -> LG : info("Inicia el procesamiento del dataset: sensor_events")
+
+== Lectura Bronze ==
+
+P -> R : leer_dataset_bronze(spark, "sensor_events")
+activate R
+
+R -> S : obtener_ruta_dataset_bronze("sensor_events")
+S --> R : ruta Bronze de sensor_events
+
+R -> SC : obtener_esquema_dataset("sensor_events")
+SC --> R : ESQUEMA_SENSOR_EVENTS
+
+R -> B : spark.read\n.option(header, sep, formatos)\n.schema(esquema)\n.csv(ruta)
+B --> R : datos CSV
+R --> P : df (DataFrame de sensor_events)
+deactivate R
+
+P -> P : cantidad_registros = df.count()
+P -> LG : info("Lectura completada con N registros")
+
+== Validación ==
+
+P -> V : ejecutar_validaciones_dataset(df, "sensor_events")
+activate V
+
+V -> QR : obtener_reglas_dataset("sensor_events")
+QR --> V : REGLAS_CALIDAD["sensor_events"]
+
+V -> V : validar_dataset_no_vacio(df)
+V -> V : validar_columnas_requeridas(df, reglas)
+V -> V : validar_columnas_no_nulas(df, reglas)
+V -> V : validar_valores_permitidos(df, reglas)
+V -> V : validar_rangos_numericos(df, reglas)
+V -> V : validar_duplicados(df, reglas)
+
+alt Validación correcta
+    V --> P : OK
+else Error de calidad
+    V --> P : ValueError
+    P --> M : Propaga error
+end
+deactivate V
+
+P -> LG : info("Validaciones completadas correctamente")
+
+== Escritura Silver ==
+
+P -> W : escribir_dataset_silver(df, "sensor_events")
+activate W
+
+W -> S : obtener ruta Silver + modo + formato
+S --> W : DATASETS_SILVER["sensor_events"],\noverwrite, parquet
+
+W -> W : asegurar_carpeta_padre_salida(...)
+W -> SI : df.write.mode("overwrite").parquet(ruta_salida)
+SI --> W : persistencia completada
+W --> P : OK
+deactivate W
+
+P -> LG : info("Escritura completada en silver")
+P -> LG : info("Finaliza el procesamiento del dataset: sensor_events")
+P -> LG : info("Finaliza la ejecución completa...")
+deactivate P
+
+== Cierre ==
+
+M -> LG : info("La ejecución completa finalizó correctamente")
+M -> M : spark.stop()
+M -> LG : info("SparkSession detenida correctamente")
+M -> LG : info("Finaliza la aplicación principal...")
+deactivate M
+
+@enduml
